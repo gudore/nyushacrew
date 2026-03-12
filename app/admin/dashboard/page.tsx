@@ -8,8 +8,11 @@ import {
   RefreshCw,
   Eye,
   AlertTriangle,
+  Bot,
+  LayoutDashboard,
 } from 'lucide-react'
 import Skeleton, { SkeletonRow } from '@/components/ui/Skeleton'
+import AgentChatPanel from '@/components/admin/AgentChatPanel'
 import type { ContractData } from '@/lib/types'
 
 interface DBRecord {
@@ -77,6 +80,7 @@ export default function AdminDashboard() {
   const [records, setRecords] = useState<DBRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterTab>('all')
+  const [mobileView, setMobileView] = useState<'dashboard' | 'chat'>('dashboard')
 
   const fetchRecords = useCallback(async () => {
     setLoading(true)
@@ -122,10 +126,10 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+      <header className="bg-white border-b border-gray-200 shadow-sm shrink-0">
+        <div className="px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center">
@@ -137,6 +141,25 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Mobile view toggle */}
+              <div className="flex lg:hidden gap-1 bg-gray-100 rounded-lg p-0.5">
+                <button
+                  onClick={() => setMobileView('dashboard')}
+                  className={`p-2 rounded-md transition-colors ${
+                    mobileView === 'dashboard' ? 'bg-white shadow-sm text-teal-600' : 'text-gray-400'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setMobileView('chat')}
+                  className={`p-2 rounded-md transition-colors ${
+                    mobileView === 'chat' ? 'bg-white shadow-sm text-teal-600' : 'text-gray-400'
+                  }`}
+                >
+                  <Bot className="w-4 h-4" />
+                </button>
+              </div>
               <button
                 onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300
@@ -158,125 +181,140 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
-        {/* Auth warning */}
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-700">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          本番環境では認証を追加してください
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="送信済み" sub="Pending" count={pendingCount} color="blue" />
-          <StatCard label="進行中" sub="In Progress" count={inProgressCount} color="yellow" />
-          <StatCard label="提出済み" sub="Submitted" count={submittedCount} color="amber" pulse />
-          <StatCard label="承認済み" sub="Approved" count={approvedCount} color="green" />
-        </div>
-
-        {/* Filter tabs + refresh */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1 bg-white rounded-lg border border-gray-200 p-1">
-            {([
-              ['all', 'すべて'],
-              ['submitted', '提出済み'],
-              ['review-needed', '要確認'],
-              ['approved', '承認済み'],
-            ] as [FilterTab, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === key
-                    ? 'bg-teal-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={fetchRecords}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            更新
-          </button>
-        </div>
-
-        {/* Table */}
-        {loading ? (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className={`h-4 w-20 ${i >= 3 ? 'hidden md:block' : ''}`} />
-              ))}
+      {/* Split view: Dashboard 60% | Chat 40% */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Dashboard panel */}
+        <div className={`flex-1 lg:w-[60%] lg:block overflow-y-auto ${
+          mobileView === 'dashboard' ? 'block' : 'hidden'
+        }`}>
+          <main className="px-4 md:px-6 py-6 space-y-6">
+            {/* Auth warning */}
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-700">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              本番環境では認証を追加してください
             </div>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="border-b border-gray-50">
-                <SkeletonRow cols={6} />
+
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="送信済み" sub="Pending" count={pendingCount} color="blue" />
+              <StatCard label="進行中" sub="In Progress" count={inProgressCount} color="yellow" />
+              <StatCard label="提出済み" sub="Submitted" count={submittedCount} color="amber" pulse />
+              <StatCard label="承認済み" sub="Approved" count={approvedCount} color="green" />
+            </div>
+
+            {/* Filter tabs + refresh */}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1 bg-white rounded-lg border border-gray-200 p-1">
+                {([
+                  ['all', 'すべて'],
+                  ['submitted', '提出済み'],
+                  ['review-needed', '要確認'],
+                  ['approved', '承認済み'],
+                ] as [FilterTab, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setFilter(key)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      filter === key
+                        ? 'bg-teal-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-400 text-sm">データがありません</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">氏名</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">ポジション</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 hidden lg:table-cell">雇用形態</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 hidden lg:table-cell">入社日</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">提出日</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">ステータス</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">AIレビュー</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{r.contract?.employeeName || '—'}</p>
-                        <p className="text-xs text-gray-400 md:hidden">{r.contract?.position || ''}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-700 hidden md:table-cell">{r.contract?.position || '—'}</td>
-                      <td className="px-4 py-3 text-slate-700 hidden lg:table-cell">
-                        {EMPLOYMENT_LABELS[r.contract?.employmentType] || r.contract?.employmentType || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700 hidden lg:table-cell">{r.contract?.startDate || '—'}</td>
-                      <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
-                        {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('ja-JP') : '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={r.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <AIReviewBadge aiReview={r.aiReview} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/review/${r.token}`}
-                          className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-800 font-medium text-sm transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          詳細
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <button
+                onClick={fetchRecords}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                更新
+              </button>
             </div>
-          </div>
-        )}
-      </main>
+
+            {/* Table */}
+            {loading ? (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className={`h-4 w-20 ${i >= 3 ? 'hidden md:block' : ''}`} />
+                  ))}
+                </div>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="border-b border-gray-50">
+                    <SkeletonRow cols={6} />
+                  </div>
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-gray-400 text-sm">データがありません</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left px-4 py-3 font-medium text-gray-500">氏名</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">ポジション</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500 hidden lg:table-cell">雇用形態</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500 hidden lg:table-cell">入社日</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500 hidden md:table-cell">提出日</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500">ステータス</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500">AIレビュー</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-500">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => (
+                        <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-800">{r.contract?.employeeName || '—'}</p>
+                            <p className="text-xs text-gray-400 md:hidden">{r.contract?.position || ''}</p>
+                          </td>
+                          <td className="px-4 py-3 text-slate-700 hidden md:table-cell">{r.contract?.position || '—'}</td>
+                          <td className="px-4 py-3 text-slate-700 hidden lg:table-cell">
+                            {EMPLOYMENT_LABELS[r.contract?.employmentType] || r.contract?.employmentType || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700 hidden lg:table-cell">{r.contract?.startDate || '—'}</td>
+                          <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
+                            {r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('ja-JP') : '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={r.status} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <AIReviewBadge aiReview={r.aiReview} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Link
+                              href={`/admin/review/${r.token}`}
+                              className="inline-flex items-center gap-1 text-teal-600 hover:text-teal-800 font-medium text-sm transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                              詳細
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* Chat panel */}
+        <div className={`lg:w-[40%] lg:block ${
+          mobileView === 'chat' ? 'block w-full' : 'hidden'
+        }`}>
+          <AgentChatPanel onRefresh={fetchRecords} />
+        </div>
+      </div>
     </div>
   )
 }

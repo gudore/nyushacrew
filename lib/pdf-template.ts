@@ -1,4 +1,5 @@
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { ContractData } from '@/lib/types'
@@ -44,6 +45,7 @@ function todayFormatted(): string {
 
 export async function generateContractPDF(data: ContractData): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
+  doc.registerFontkit(fontkit)
   let page = doc.addPage([A4_WIDTH, A4_HEIGHT])
 
   // --- Font loading ---
@@ -54,7 +56,7 @@ export async function generateContractPDF(data: ContractData): Promise<Uint8Arra
     // Read bundled Noto Sans CJK JP from public/fonts (OTF format, required by pdf-lib)
     const fontPath = join(process.cwd(), 'public', 'fonts', 'NotoSansJP-Regular.otf')
     const fontBytes = await readFile(fontPath)
-    font = await doc.embedFont(fontBytes, { subset: true })
+    font = await doc.embedFont(fontBytes)
     japaneseFontLoaded = true
   } catch (e) {
     console.error('Japanese font load failed, falling back to Helvetica:', e)

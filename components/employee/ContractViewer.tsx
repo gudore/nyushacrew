@@ -197,7 +197,7 @@ export default function ContractViewer({ token, onComplete }: ContractViewerProp
 
             {pdfUrl && !pdfLoading && (
               <iframe
-                src={pdfUrl}
+                src={`${pdfUrl}#toolbar=1&navpanes=0`}
                 className="w-full border-0"
                 style={{ height: '70vh', minHeight: '500px' }}
                 title="Contract PDF"

@@ -136,6 +136,32 @@ export interface OCRResult {
   rawText: string
 }
 
+// ===== Agent Chat Types =====
+export interface AgentChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  toolCalls?: AgentToolCall[]
+}
+
+export interface AgentToolCall {
+  id: string
+  name: string
+  input: Record<string, unknown>
+  status: 'running' | 'completed' | 'error'
+  result?: Record<string, unknown>
+}
+
+export interface AgentSSEEvent {
+  type: 'text_delta' | 'tool_start' | 'tool_result' | 'done' | 'error'
+  text?: string
+  name?: string
+  input?: Record<string, unknown>
+  result?: Record<string, unknown>
+  error?: string
+  toolCallId?: string
+}
+
 // ===== Utility =====
 export function generateToken(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)

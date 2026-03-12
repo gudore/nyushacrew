@@ -20,11 +20,12 @@ const FOREIGN_DOC_OPTIONS = [
 ]
 
 // Standard fields to display in the review form
-const REVIEW_FIELDS: { key: string; label: string; sub: string }[] = [
-  { key: 'fullNameJP', label: '氏名（漢字）', sub: 'Full Name' },
+const REVIEW_FIELDS: { key: string; label: string; sub: string; alwaysShow?: boolean }[] = [
+  { key: 'fullNameJP', label: '氏名（漢字）', sub: 'Full Name (Kanji)', alwaysShow: true },
+  { key: 'fullNameEN', label: '氏名（ローマ字）', sub: 'Full Name (Roman)', alwaysShow: true },
   { key: 'fullNameKana', label: '読み仮名', sub: 'Kana Reading' },
   { key: 'birthDate', label: '生年月日', sub: 'Date of Birth' },
-  { key: 'address', label: '住所', sub: 'Address' },
+  { key: 'address', label: '住所', sub: 'Address', alwaysShow: true },
   { key: 'gender', label: '性別', sub: 'Gender' },
   { key: 'nationality', label: '国籍', sub: 'Nationality' },
 ]
@@ -211,7 +212,7 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
         <div className="space-y-4">
           {REVIEW_FIELDS.map((field) => {
             const value = editedData[field.key]
-            if (value === undefined && !extractedData[field.key]) return null
+            if (value === undefined && !extractedData[field.key] && !field.alwaysShow) return null
             return (
               <div key={field.key}>
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">

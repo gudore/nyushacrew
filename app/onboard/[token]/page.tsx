@@ -42,16 +42,18 @@ export default function OnboardingPage({
   } = useOnboarding(token)
   const [currentStep, setCurrentStep] = useState(0)
 
-  // Dynamic steps: insert 在留カード after 個人情報 for non-Japanese
+  // Dynamic steps: insert 在留カード after 個人情報 for non-Japanese,
+  // but skip it if the foreigner already uploaded a 在留カード in the document step
   const isForeigner = collectedData.nationality !== undefined && collectedData.nationality !== '日本'
+  const alreadyHasResidenceCard = (collectedData as Record<string, unknown>).documentType === '在留カード'
   const steps = useMemo(() => {
-    if (isForeigner) {
+    if (isForeigner && !alreadyHasResidenceCard) {
       const s = [...BASE_STEPS]
       s.splice(3, 0, '在留カード')
       return s
     }
     return BASE_STEPS
-  }, [isForeigner])
+  }, [isForeigner, alreadyHasResidenceCard])
 
   const advance = useCallback(() => {
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))

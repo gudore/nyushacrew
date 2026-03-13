@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { Camera, Upload, Loader2, CheckCircle } from 'lucide-react'
 import OptionCard from '@/components/ui/OptionCard'
 import AINote from '@/components/ui/AINote'
@@ -16,11 +16,14 @@ const JAPANESE_DOC_OPTIONS = [
 ]
 
 const FOREIGN_DOC_OPTIONS = [
+  { value: '在留カード', label: '在留カード', icon: '🪪' },
+  { value: 'マイナンバーカード', label: 'マイナンバーカード', icon: '🪪' },
+  { value: '運転免許証', label: '運転免許証', icon: '🚗' },
   { value: 'パスポート', label: 'パスポート', icon: '📘' },
 ]
 
 // Standard fields to display in the review form
-const REVIEW_FIELDS: { key: string; label: string; sub: string; alwaysShow?: boolean }[] = [
+const BASE_REVIEW_FIELDS: { key: string; label: string; sub: string; alwaysShow?: boolean }[] = [
   { key: 'fullNameJP', label: '氏名（漢字）', sub: 'Full Name (Kanji)', alwaysShow: true },
   { key: 'fullNameEN', label: '氏名（ローマ字）', sub: 'Full Name (Roman)', alwaysShow: true },
   { key: 'fullNameKana', label: '読み仮名', sub: 'Kana Reading' },
@@ -28,6 +31,13 @@ const REVIEW_FIELDS: { key: string; label: string; sub: string; alwaysShow?: boo
   { key: 'address', label: '住所', sub: 'Address', alwaysShow: true },
   { key: 'gender', label: '性別', sub: 'Gender' },
   { key: 'nationality', label: '国籍', sub: 'Nationality' },
+]
+
+// Extra fields shown when 在留カード is the selected document
+const RESIDENCE_CARD_FIELDS: { key: string; label: string; sub: string; alwaysShow?: boolean }[] = [
+  { key: 'residenceCardNumber', label: '在留カード番号', sub: 'Residence Card No.' },
+  { key: 'visaStatus', label: '在留資格', sub: 'Visa Status' },
+  { key: 'visaExpiry', label: '在留期間満了日', sub: 'Visa Expiry' },
 ]
 
 function ConfidenceDot({ score }: { score: number | undefined }) {
@@ -52,6 +62,13 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isJapanese = nationality === 'japanese'
+  const isResidenceCard = documentType === '在留カード'
+
+  // Dynamic review fields: add residence card fields when applicable
+  const REVIEW_FIELDS = useMemo(
+    () => isResidenceCard ? [...BASE_REVIEW_FIELDS, ...RESIDENCE_CARD_FIELDS] : BASE_REVIEW_FIELDS,
+    [isResidenceCard],
+  )
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -109,7 +126,7 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
       }
       reader.readAsDataURL(file)
     },
-    [documentType],
+    [documentType, REVIEW_FIELDS],
   )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,6 +141,11 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
       nationality: isJapanese ? '日本' : editedData.nationality || '',
       documentType,
       _ocrRaw: extractedData,
+    }
+    // When 在留カード was uploaded here, include visa data so the dedicated step can be skipped
+    if (isResidenceCard && extractedData) {
+      result.workPermitted = extractedData.workPermitted
+      result._residenceCardOcrRaw = extractedData
     }
     onComplete(result)
   }
@@ -144,7 +166,7 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
           <OptionCard
             options={[
               { value: 'japanese', label: '日本国籍', icon: '🇯🇵', description: 'マイナンバーカード・運転免許証・パスポート' },
-              { value: 'foreign', label: '外国籍', icon: '🌍', description: 'パスポート（在留カードは次のステップ）' },
+              { value: 'foreign', label: '外国籍', icon: '🌍', description: '在留カード・マイナンバーカード・運転免許証・パスポート' },
             ]}
             value={nationality}
             onChange={setNationality}
@@ -174,11 +196,6 @@ export default function DocumentUploader({ onComplete }: DocumentUploaderProps) 
             onChange={setDocumentType}
             allowCustom={false}
           />
-          {!isJapanese && (
-            <p className="text-xs text-gray-400 mt-3">
-              在留カードは次のステップでアップロードしてください
-            </p>
-          )}
         </div>
         <button
           onClick={() => setNationality(null)}

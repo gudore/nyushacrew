@@ -13,6 +13,7 @@ const REVIEW_FIELDS: { key: string; label: string; sub: string }[] = [
   { key: 'fullNameEN', label: '氏名（ローマ字）', sub: 'Full Name (EN)' },
   { key: 'birthDate', label: '生年月日', sub: 'Date of Birth' },
   { key: 'nationality', label: '国籍', sub: 'Nationality' },
+  { key: 'address', label: '住所', sub: 'Address' },
   { key: 'residenceCardNumber', label: '在留カード番号', sub: 'Residence Card No.' },
   { key: 'visaStatus', label: '在留資格', sub: 'Visa Status' },
   { key: 'visaExpiry', label: '在留期間満了日', sub: 'Visa Expiry' },
